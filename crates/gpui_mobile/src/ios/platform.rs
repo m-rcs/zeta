@@ -290,6 +290,15 @@ impl Platform for IosPlatform {
         // iOS doesn't have visible cursors (except for Apple Pencil hover on iPad)
     }
 
+    fn hide_cursor_until_mouse_moves(&self) {
+        // iOS has no system mouse cursor to hide.
+    }
+
+    fn is_cursor_visible(&self) -> bool {
+        // iOS has no system mouse cursor.
+        false
+    }
+
     fn should_auto_hide_scrollbars(&self) -> bool {
         true // iOS always auto-hides scrollbars
     }
