@@ -78,8 +78,21 @@ targets:
           DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
     preBuildScripts:
       - name: Build Rust static library
+        # Declaring the .a as an output tells xcodebuild that this script
+        # produces it, so the linker phase waits for the script instead of
+        # failing during input planning with "Build input file cannot be
+        # found".
+        outputFiles:
+          - "$(ZED_MOBILE_STATIC_LIB)"
         script: |
           set -euo pipefail
+          # Xcode build scripts run with a sanitized PATH that doesn't
+          # include cargo/rustup. Add the standard rustup install dir.
+          export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          if ! command -v cargo >/dev/null 2>&1; then
+            echo "error: cargo not found on PATH; install rustup" >&2
+            exit 1
+          fi
           cd "${PROJECT_DIR}/../.."
           if [ "${PLATFORM_NAME}" = "iphonesimulator" ]; then
             RUST_TARGET="aarch64-apple-ios-sim"
