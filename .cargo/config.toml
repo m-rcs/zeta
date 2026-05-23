@@ -22,3 +22,19 @@ rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
 [env]
 MACOSX_DEPLOYMENT_TARGET = "10.15.7"
+# Tell `yeslogic-fontconfig-sys` to dlopen libfontconfig at runtime instead of
+# linking against it. Required for the Android cross-build (the NDK ships no
+# fontconfig); harmless on macOS/Windows (font-kit uses native APIs there);
+# switches to dynamic loading on Linux hosts.
+RUST_FONTCONFIG_DLOPEN = "on"
+
+# Android NDK paths (CC_*, AR_*, linker) are injected by `cargo-ndk`, which
+# auto-discovers the NDK from $ANDROID_NDK_HOME, $ANDROID_HOME/ndk/*, or the
+# Android Studio bundled location. Install once with `cargo install cargo-ndk`,
+# then build with:
+#
+#   cargo ndk -t arm64-v8a build -p zed_mobile
+#
+# The Gradle build in mobile/android/ invokes cargo-ndk internally, so the
+# `./gradlew assembleDebug` path doesn't require any extra developer setup
+# beyond having `cargo-ndk` on `$PATH` and an NDK installed.
