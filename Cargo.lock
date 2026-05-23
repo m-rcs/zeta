@@ -22939,6 +22939,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "zed_mobile"
+version = "0.1.0"
+dependencies = [
+ "android-activity",
+ "android_logger",
+ "gpui",
+ "gpui_mobile",
+ "log",
+ "objc2",
+]
+
+[[package]]
 name = "zed_proto"
 version = "0.3.2"
 dependencies = [
