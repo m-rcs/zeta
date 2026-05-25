@@ -1,0 +1,25 @@
+[package]
+name = "zed_mobile"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "GPL-3.0-or-later OR AGPL-3.0-or-later OR Apache-2.0"
+description = "Zed mobile (iOS / Android) app library"
+
+[lib]
+path = "src/zed_mobile.rs"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+log.workspace = true
+
+[target.'cfg(target_os = "ios")'.dependencies]
+gpui = { workspace = true, features = ["font-kit"] }
+gpui_mobile.workspace = true
+objc2 = "0.6"
+
+[target.'cfg(target_os = "android")'.dependencies]
+gpui = { workspace = true, features = ["font-kit"] }
+gpui_mobile.workspace = true
+android-activity = { version = "0.6", features = ["native-activity"] }
+android_logger = "0.15"

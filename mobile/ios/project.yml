@@ -1,0 +1,97 @@
+name: ZedMobile
+options:
+  bundleIdPrefix: dev.zed
+  deploymentTarget:
+    iOS: "16.0"
+  generateEmptyDirectories: true
+  createIntermediateGroups: true
+
+targets:
+  ZedMobile:
+    type: application
+    platform: iOS
+    sources:
+      - path: main.m
+        type: file
+        buildPhase: sources
+      - path: zed_mobile.h
+        type: file
+        buildPhase: headers
+      - path: LaunchScreen.storyboard
+        type: file
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.zed.mobile
+        PRODUCT_NAME: ZedMobile
+        INFOPLIST_FILE: Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        CLANG_ENABLE_MODULES: YES
+        CLANG_ENABLE_OBJC_ARC: YES
+        ENABLE_BITCODE: NO
+        ENABLE_DEBUG_DYLIB: NO
+        OTHER_LINK_BINARY_WITH_LIBRARIES_SECTION_TYPE: static
+        DEAD_CODE_STRIPPING: NO
+        OTHER_LDFLAGS:
+          - "-force_load"
+          - "$(ZED_MOBILE_STATIC_LIB)"
+          - "-lc++"
+          - "-framework UIKit"
+          - "-framework Metal"
+          - "-framework MetalKit"
+          - "-framework QuartzCore"
+          - "-framework CoreGraphics"
+          - "-framework CoreText"
+          - "-framework CoreFoundation"
+          - "-framework Foundation"
+          - "-framework Security"
+          - "-framework SystemConfiguration"
+          - "-framework AudioToolbox"
+          - "-framework WebKit"
+          - "-framework CoreMedia"
+          - "-framework AVFoundation"
+          - "-framework LocalAuthentication"
+          - "-framework Contacts"
+          - "-framework EventKit"
+          - "-framework StoreKit"
+          - "-framework CoreMotion"
+          - "-ObjC"
+        HEADER_SEARCH_PATHS:
+          - "$(PROJECT_DIR)"
+        VALID_ARCHS: "arm64"
+        ARCHS: "arm64"
+        ONLY_ACTIVE_ARCH: YES
+      configs:
+        Debug:
+          "ZED_MOBILE_STATIC_LIB[sdk=iphonesimulator*]": "$(PROJECT_DIR)/../../target/aarch64-apple-ios-sim/debug/libzed_mobile.a"
+          "ZED_MOBILE_STATIC_LIB[sdk=iphoneos*]":       "$(PROJECT_DIR)/../../target/aarch64-apple-ios/debug/libzed_mobile.a"
+          GCC_OPTIMIZATION_LEVEL: "0"
+          DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+        Release:
+          "ZED_MOBILE_STATIC_LIB[sdk=iphonesimulator*]": "$(PROJECT_DIR)/../../target/aarch64-apple-ios-sim/release/libzed_mobile.a"
+          "ZED_MOBILE_STATIC_LIB[sdk=iphoneos*]":       "$(PROJECT_DIR)/../../target/aarch64-apple-ios/release/libzed_mobile.a"
+          GCC_OPTIMIZATION_LEVEL: "s"
+          DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+    preBuildScripts:
+      - name: Build Rust static library
+        script: |
+          set -euo pipefail
+          cd "${PROJECT_DIR}/../.."
+          if [ "${PLATFORM_NAME}" = "iphonesimulator" ]; then
+            RUST_TARGET="aarch64-apple-ios-sim"
+          else
+            RUST_TARGET="aarch64-apple-ios"
+          fi
+          if [ "${CONFIGURATION}" = "Release" ]; then
+            CARGO_FLAGS="--release"
+          else
+            CARGO_FLAGS=""
+          fi
+          rustup target add "${RUST_TARGET}" >/dev/null 2>&1 || true
+          cargo build -p zed_mobile --target "${RUST_TARGET}" ${CARGO_FLAGS}
+        shell: /bin/bash
+        basedOnDependencyAnalysis: false
