@@ -1183,6 +1183,14 @@ impl Platform for AndroidPlatform {
         // No-op: Android uses touch, not mouse cursors.
     }
 
+    fn hide_cursor_until_mouse_moves(&self) {
+        // No system mouse cursor on Android.
+    }
+
+    fn is_cursor_visible(&self) -> bool {
+        false
+    }
+
     fn should_auto_hide_scrollbars(&self) -> bool {
         true
     }
@@ -1407,6 +1415,12 @@ impl Platform for SharedPlatform {
     }
     fn set_cursor_style(&self, style: CursorStyle) {
         <AndroidPlatform as Platform>::set_cursor_style(&self.0, style)
+    }
+    fn hide_cursor_until_mouse_moves(&self) {
+        <AndroidPlatform as Platform>::hide_cursor_until_mouse_moves(&self.0)
+    }
+    fn is_cursor_visible(&self) -> bool {
+        <AndroidPlatform as Platform>::is_cursor_visible(&self.0)
     }
     fn should_auto_hide_scrollbars(&self) -> bool {
         <AndroidPlatform as Platform>::should_auto_hide_scrollbars(&self.0)
