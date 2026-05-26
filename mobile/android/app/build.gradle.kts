@@ -1,10 +1,15 @@
 // App module — packages `libzed_mobile.so` into an APK using NativeActivity.
 //
-// The native library is produced by `cargo build -p zed_mobile
-// --target aarch64-linux-android` (or `cargo ndk`) and copied into
-// `app/src/main/jniLibs/arm64-v8a/libzed_mobile.so` by the `buildRustDebug`
-// task below. `preBuild` depends on it so a plain `./gradlew assembleDebug`
-// is a one-shot build.
+// The native library is produced by `cargo ndk -t arm64-v8a build -p zed_mobile`
+// and copied into `app/src/main/jniLibs/arm64-v8a/libzed_mobile.so` by the
+// `buildRustDebug` task below. `preBuild` depends on it so a plain
+// `./gradlew assembleDebug` is a one-shot build.
+//
+// Requires `cargo-ndk` on $PATH (`cargo install cargo-ndk`) and an NDK
+// reachable via $ANDROID_NDK_HOME / $ANDROID_HOME/ndk/* / the Android Studio
+// bundled NDK. cargo-ndk handles CC/AR/linker setup itself.
+
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -71,18 +76,23 @@ dependencies {
 
 // ── Rust build integration ──────────────────────────────────────────────────
 //
-// Drives `cargo build -p zed_mobile --target aarch64-linux-android` and copies
-// the resulting `libzed_mobile.so` into `app/src/main/jniLibs/arm64-v8a/`. Wire
-// `preBuild` to depend on it so a plain `assembleDebug` (or `assembleRelease`)
-// is one-shot.
+// Drives `cargo ndk -t arm64-v8a build -p zed_mobile` and copies the resulting
+// `libzed_mobile.so` into `app/src/main/jniLibs/arm64-v8a/`. cargo-ndk auto-
+// discovers the NDK and injects CC/AR/linker for the target, so we don't
+// hardcode any NDK paths here. `preBuild` depends on this task so a plain
+// `assembleDebug` (or `assembleRelease`) is one-shot.
 
 val workspaceRoot = rootProject.projectDir.parentFile.parentFile
 
-fun ndkBin(): String {
-    val home = System.getenv("ANDROID_NDK_HOME")
-        ?: System.getenv("ANDROID_NDK_ROOT")
-        ?: "/opt/homebrew/share/android-ndk"
-    return "$home/toolchains/llvm/prebuilt/darwin-x86_64/bin"
+fun resolveNdkHome(): String {
+    System.getenv("ANDROID_NDK_HOME")?.takeIf { it.isNotBlank() }?.let { return it }
+    System.getenv("ANDROID_NDK_ROOT")?.takeIf { it.isNotBlank() }?.let { return it }
+    val localProps = rootProject.file("local.properties")
+    if (localProps.exists()) {
+        val props = Properties().apply { localProps.inputStream().use { load(it) } }
+        props.getProperty("ndk.dir")?.takeIf { it.isNotBlank() }?.let { return it }
+    }
+    error("No NDK found. Set ANDROID_NDK_HOME or add ndk.dir=... to local.properties.")
 }
 
 fun registerRustBuild(name: String, profileFlag: String?, profileDir: String) {
@@ -91,16 +101,15 @@ fun registerRustBuild(name: String, profileFlag: String?, profileDir: String) {
         description = "Build libzed_mobile.so for arm64-v8a ($profileDir)."
         workingDir = workspaceRoot
 
-        val bin = ndkBin()
-        environment("RUST_FONTCONFIG_DLOPEN", "on")
-        environment("CC_aarch64_linux_android",  "$bin/aarch64-linux-android26-clang")
-        environment("CXX_aarch64_linux_android", "$bin/aarch64-linux-android26-clang++")
-        environment("AR_aarch64_linux_android",  "$bin/llvm-ar")
-        environment("CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER",
-                    "$bin/aarch64-linux-android26-clang")
+        environment("ANDROID_NDK_HOME", resolveNdkHome())
 
-        val args = mutableListOf("cargo", "build", "-p", "zed_mobile",
-                                 "--target", "aarch64-linux-android")
+        val args = mutableListOf(
+            "cargo", "ndk",
+            "-t", "arm64-v8a",
+            "-P", "26",                 // matches android.defaultConfig.minSdk
+            "--link-libcxx-shared",     // gpui_mobile depends on libc++_shared
+            "build", "-p", "zed_mobile",
+        )
         if (profileFlag != null) args += profileFlag
         commandLine(args)
 
