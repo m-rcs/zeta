@@ -1,0 +1,123 @@
+name: mobile_check
+
+on:
+  pull_request:
+    paths:
+      - "crates/gpui*/**"
+      - "crates/zed_mobile/**"
+      - "mobile/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/config.toml"
+      - ".github/workflows/mobile_check.yml"
+      - "rust-toolchain.toml"
+  push:
+    branches:
+      - trunk
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  RUST_BACKTRACE: "1"
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ios:
+    name: iOS / cargo check + xcodebuild
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Honor rust-toolchain.toml (pinned toolchain) and add the iOS
+      # targets to that toolchain rather than to `stable`.
+      - name: Install Rust toolchain + iOS targets
+        run: |
+          rustup show active-toolchain
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: mobile-ios
+          save-if: ${{ github.ref == 'refs/heads/trunk' }}
+
+      - name: cargo check (iphoneos)
+        run: cargo check -p zed_mobile --target aarch64-apple-ios
+
+      - name: cargo check (iphonesimulator)
+        run: cargo check -p zed_mobile --target aarch64-apple-ios-sim
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: mobile/ios
+        run: xcodegen generate
+
+      # Build the static lib up front so xcodebuild's linker phase has the
+      # artifact regardless of whether the in-project preBuild script runs
+      # ahead of build-input planning.
+      - name: cargo build (iphoneos static lib)
+        run: cargo build -p zed_mobile --target aarch64-apple-ios
+
+      - name: xcodebuild (iphoneos, Debug)
+        working-directory: mobile/ios
+        run: |
+          xcodebuild \
+            -project ZedMobile.xcodeproj \
+            -scheme ZedMobile \
+            -sdk iphoneos \
+            -configuration Debug \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+  android:
+    name: Android / cargo-ndk + gradle
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain + Android target
+        run: |
+          rustup show active-toolchain
+          rustup target add aarch64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: mobile-android
+          save-if: ${{ github.ref == 'refs/heads/trunk' }}
+          cache-bin: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # GitHub Actions ubuntu runners ship the NDK at
+      # $ANDROID_NDK_LATEST_HOME. Surface it as $ANDROID_NDK_HOME so
+      # cargo-ndk and our Gradle task both pick it up.
+      - name: Surface ANDROID_NDK_HOME
+        run: |
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          echo "Using NDK at $ANDROID_NDK_LATEST_HOME"
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+
+      - name: cargo ndk check
+        run: cargo ndk -t arm64-v8a -P 26 check -p zed_mobile
+
+      - name: gradle assembleDebug
+        working-directory: mobile/android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Verify APK contains libzed_mobile.so
+        working-directory: mobile/android
+        run: |
+          set -euo pipefail
+          unzip -l app/build/outputs/apk/debug/app-debug.apk \
+            | grep -q "lib/arm64-v8a/libzed_mobile.so"
