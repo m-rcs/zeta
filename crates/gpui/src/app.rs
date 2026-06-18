@@ -188,6 +188,11 @@ impl Application {
             let cx = &mut *this.borrow_mut();
             on_finish_launching(cx);
         }));
+        // On iOS, UIApplicationMain owns the run loop so Platform::run()
+        // returns immediately (unlike desktop where it blocks forever).
+        // Prevent Application from dropping the Rc<AppCell> — windows
+        // hold Weak<AppCell> and need a strong reference to stay alive.
+        std::mem::forget(self);
     }
 
     /// Register a handler to be invoked when the platform instructs the application

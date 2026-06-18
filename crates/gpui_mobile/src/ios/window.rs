@@ -10,15 +10,15 @@
 //! whose view hosts a CAMetalLayer. Rendering is performed by
 //! `gpui_wgpu::WgpuRenderer` which drives wgpu over the Metal backend.
 
-use super::events::*;
 use super::IosDisplay;
+use super::events::*;
 use crate::momentum::{MomentumScroller, VelocityTracker};
 use gpui::{
-    point, px, size, AnyWindowHandle, AtlasKey, AtlasTextureId, AtlasTextureKind, AtlasTile,
-    Bounds, Capslock, DevicePixels, DispatchEventResult, GpuSpecs, Modifiers, Pixels,
-    PlatformAtlas, PlatformDisplay, PlatformInput, PlatformInputHandler, PlatformWindow, Point,
-    PromptButton, PromptLevel, RequestFrameOptions, Scene, Size, TileId, WindowAppearance,
-    WindowBackgroundAppearance, WindowBounds, WindowControlArea, WindowParams,
+    AnyWindowHandle, AtlasKey, AtlasTextureId, AtlasTextureKind, AtlasTile, Bounds, Capslock,
+    DevicePixels, DispatchEventResult, GpuSpecs, Modifiers, Pixels, PlatformAtlas, PlatformDisplay,
+    PlatformInput, PlatformInputHandler, PlatformWindow, Point, PromptButton, PromptLevel,
+    RequestFrameOptions, Scene, Size, TileId, WindowAppearance, WindowBackgroundAppearance,
+    WindowBounds, WindowControlArea, WindowParams, point, px, size,
 };
 use gpui_wgpu::{GpuContext, WgpuContext, WgpuRenderer, WgpuSurfaceConfig};
 use objc2::encode::{Encode, Encoding, RefEncode};
@@ -607,26 +607,29 @@ impl IosWindow {
                 preferred_present_mode: None,
             };
 
+            let raw_window = RawIosWindow {
+                view: ios_window.view as *mut c_void,
+            };
+
             let metal_instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
                 backends: wgpu::Backends::METAL,
                 flags: wgpu::InstanceFlags::default(),
                 backend_options: wgpu::BackendOptions::default(),
                 memory_budget_thresholds: wgpu::MemoryBudgetThresholds::default(),
-                display: None,
+                display: Some(Box::new(raw_window)),
             });
-
-            let raw_window = RawIosWindow {
-                view: ios_window.view as *mut c_void,
-            };
 
             // Build a temporary surface for WgpuContext initialisation
             // (adapter selection needs a surface to test compatibility).
             let window_handle = raw_window
                 .window_handle()
                 .expect("iOS window handle unavailable");
+            let display_handle = raw_window
+                .display_handle()
+                .expect("iOS display handle unavailable");
 
             let target = wgpu::SurfaceTargetUnsafe::RawHandle {
-                raw_display_handle: None,
+                raw_display_handle: Some(display_handle.as_raw()),
                 raw_window_handle: window_handle.as_raw(),
             };
 
