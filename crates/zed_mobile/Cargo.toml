@@ -12,10 +12,33 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
 log.workspace = true
+assets.workspace = true
+buffer_diff.workspace = true
+clock.workspace = true
+collections.workspace = true
+component.workspace = true
+emojis.workspace = true
+feature_flags.workspace = true
+file_icons.workspace = true
+fuzzy.workspace = true
+icons.workspace = true
+language.workspace = true
+menu.workspace = true
+multi_buffer.workspace = true
+rope.workspace = true
+snippet.workspace = true
+sum_tree.workspace = true
 text.workspace = true
 theme.workspace = true
-language.workspace = true
+theme_settings.workspace = true
 tree-sitter-rust.workspace = true
+ui.workspace = true
+ui_input.workspace = true
+util.workspace = true
+vim_mode_setting.workspace = true
+zed_actions.workspace = true
+zlog.workspace = true
+ztracing.workspace = true
 
 [target.'cfg(target_os = "ios")'.dependencies]
 gpui = { workspace = true, features = ["font-kit"] }
