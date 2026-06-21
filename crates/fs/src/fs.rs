@@ -25,7 +25,7 @@ use std::os::unix::ffi::OsStrExt;
 #[cfg(unix)]
 use std::os::unix::fs::{FileTypeExt, MetadataExt};
 
-#[cfg(any(target_os = "macos", target_os = "freebsd"))]
+#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
 use std::mem::MaybeUninit;
 
 use async_tar::Archive;
@@ -533,7 +533,7 @@ pub trait FileHandle: Send + Sync + std::fmt::Debug {
 }
 
 impl FileHandle for std::fs::File {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     fn current_path(&self, _: &Arc<dyn Fs>) -> Result<PathBuf> {
         use std::{
             ffi::{CStr, OsStr},
@@ -553,7 +553,7 @@ impl FileHandle for std::fs::File {
         Ok(path)
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     fn current_path(&self, _: &Arc<dyn Fs>) -> Result<PathBuf> {
         let fd = self.as_fd();
         let fd_path = format!("/proc/self/fd/{}", fd.as_raw_fd());

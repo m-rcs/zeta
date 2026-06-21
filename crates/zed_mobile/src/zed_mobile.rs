@@ -5,42 +5,110 @@
 #![cfg_attr(not(any(target_os = "ios", target_os = "android")), allow(dead_code))]
 
 #[cfg(any(target_os = "ios", target_os = "android"))]
-use gpui::{App, Render, Window, prelude::*, rgb};
+use gpui::{App, Hsla, Render, TextStyle, Window, prelude::*, rgb};
+#[cfg(any(target_os = "ios", target_os = "android"))]
+use language::{Buffer, Language, LanguageConfig};
+#[cfg(any(target_os = "ios", target_os = "android"))]
+use std::sync::Arc;
+#[cfg(any(target_os = "ios", target_os = "android"))]
+use text::ToOffset;
+#[cfg(any(target_os = "ios", target_os = "android"))]
+use theme::SyntaxTheme;
 
 #[cfg(any(target_os = "ios", target_os = "android"))]
-struct RootView;
+struct RootView {
+    buffer: gpui::Entity<Buffer>,
+    theme: Arc<SyntaxTheme>,
+}
 
 #[cfg(any(target_os = "ios", target_os = "android"))]
 impl Render for RootView {
-    fn render(
-        &mut self,
-        _window: &mut Window,
-        _cx: &mut gpui::Context<Self>,
-    ) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
+        let snapshot = self.buffer.read(cx).snapshot();
+        let len = snapshot.len();
+        let highlighted = snapshot.highlighted_text_for_range(0..len, None, &self.theme);
+        let text_style = TextStyle {
+            color: Hsla::from(rgb(0xcdd6f4)),
+            ..window.text_style()
+        };
         gpui::div()
             .size_full()
             .bg(rgb(0x1e1e2e))
-            .flex()
-            .items_center()
-            .justify_center()
-            .child(
-                gpui::div()
-                    .text_color(rgb(0xcdd6f4))
-                    .text_xl()
-                    .child("Zed Mobile"),
-            )
+            .p_4()
+            .child(highlighted.to_styled_text(&text_style))
     }
 }
 
 #[cfg(any(target_os = "ios", target_os = "android"))]
 fn open_main_window(cx: &mut App) {
     log::info!("zed_mobile: opening main window");
+
+    let rust_language = Language::new(
+        LanguageConfig {
+            name: "Rust".into(),
+            ..LanguageConfig::default()
+        },
+        Some(tree_sitter_rust::LANGUAGE.into()),
+    )
+    .with_highlights_query("(identifier) @variable\n(function_item) @function\n(type_identifier) @type\n(string_literal) @string\n(line_comment) @comment\n(block_comment) @comment\n")
+    .expect("failed to load Rust language");
+
+    let sample_code = "// Zeta Mobile - syntax highlighting demo\n\nuse std::collections::HashMap;\n\nfn main() {\n    let mut map: HashMap<&str, i32> = HashMap::new();\n    map.insert(\"answer\", 42);\n    println!(\"Hello from Zeta! {:?}\", map);\n}\n";
+
+    let theme = Arc::new(SyntaxTheme::new([
+        (
+            "variable".into(),
+            gpui::HighlightStyle {
+                color: Some(Hsla::from(rgb(0xcdd6f4))),
+                ..gpui::HighlightStyle::default()
+            },
+        ),
+        (
+            "function".into(),
+            gpui::HighlightStyle {
+                color: Some(Hsla::from(rgb(0x89b4fa))),
+                ..gpui::HighlightStyle::default()
+            },
+        ),
+        (
+            "type".into(),
+            gpui::HighlightStyle {
+                color: Some(Hsla::from(rgb(0xf9e2af))),
+                ..gpui::HighlightStyle::default()
+            },
+        ),
+        (
+            "string".into(),
+            gpui::HighlightStyle {
+                color: Some(Hsla::from(rgb(0xa6e3a1))),
+                ..gpui::HighlightStyle::default()
+            },
+        ),
+        (
+            "comment".into(),
+            gpui::HighlightStyle {
+                color: Some(Hsla::from(rgb(0x6c7086))),
+                ..gpui::HighlightStyle::default()
+            },
+        ),
+    ]));
+
+    rust_language.set_theme(&theme);
+
+    let buffer = cx.new(|cx| {
+        let mut buf = Buffer::local(sample_code, cx);
+        buf.set_language(Some(Arc::new(rust_language)), cx);
+        buf
+    });
+
+    let root_view = RootView { buffer, theme };
+
     match cx.open_window(
         gpui::WindowOptions {
             window_bounds: None,
             ..Default::default()
         },
-        |_, cx| cx.new(|_| RootView),
+        |_, cx| cx.new(|_| root_view),
     ) {
         Ok(_) => log::info!("zed_mobile: window opened"),
         Err(error) => log::error!("zed_mobile: failed to open window: {error:#}"),

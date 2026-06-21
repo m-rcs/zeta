@@ -40,6 +40,8 @@ targets:
           - "-force_load"
           - "$(ZED_MOBILE_STATIC_LIB)"
           - "-lc++"
+          - "-lz"
+          - "-liconv"
           - "-framework UIKit"
           - "-framework Metal"
           - "-framework MetalKit"
@@ -68,12 +70,12 @@ targets:
       configs:
         Debug:
           "ZED_MOBILE_STATIC_LIB[sdk=iphonesimulator*]": "$(PROJECT_DIR)/../../target/aarch64-apple-ios-sim/debug/libzed_mobile.a"
-          "ZED_MOBILE_STATIC_LIB[sdk=iphoneos*]":       "$(PROJECT_DIR)/../../target/aarch64-apple-ios/debug/libzed_mobile.a"
+          "ZED_MOBILE_STATIC_LIB[sdk=iphoneos*]": "$(PROJECT_DIR)/../../target/aarch64-apple-ios/debug/libzed_mobile.a"
           GCC_OPTIMIZATION_LEVEL: "0"
           DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
         Release:
           "ZED_MOBILE_STATIC_LIB[sdk=iphonesimulator*]": "$(PROJECT_DIR)/../../target/aarch64-apple-ios-sim/release/libzed_mobile.a"
-          "ZED_MOBILE_STATIC_LIB[sdk=iphoneos*]":       "$(PROJECT_DIR)/../../target/aarch64-apple-ios/release/libzed_mobile.a"
+          "ZED_MOBILE_STATIC_LIB[sdk=iphoneos*]": "$(PROJECT_DIR)/../../target/aarch64-apple-ios/release/libzed_mobile.a"
           GCC_OPTIMIZATION_LEVEL: "s"
           DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
     preBuildScripts:

@@ -12,6 +12,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
 log.workspace = true
+text.workspace = true
+theme.workspace = true
+language.workspace = true
+tree-sitter-rust.workspace = true
 
 [target.'cfg(target_os = "ios")'.dependencies]
 gpui = { workspace = true, features = ["font-kit"] }

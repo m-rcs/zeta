@@ -18885,7 +18885,7 @@ dependencies = [
 [[package]]
 name = "trash"
 version = "5.2.5"
-source = "git+https://github.com/zed-industries/trash-rs?rev=3bf27effd4eb8699f2e484d3326b852fe3e53af7#3bf27effd4eb8699f2e484d3326b852fe3e53af7"
+source = "git+https://github.com/m-rcs/trash-rs?rev=e065db8c26b413fdb841d4da9d5230088c9769fe#e065db8c26b413fdb841d4da9d5230088c9769fe"
 dependencies = [
  "chrono",
  "libc",
@@ -22946,8 +22946,12 @@ dependencies = [
  "android_logger",
  "gpui",
  "gpui_mobile",
+ "language",
  "log",
  "objc2",
+ "text",
+ "theme",
+ "tree-sitter-rust",
 ]
 
 [[package]]

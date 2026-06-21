@@ -935,8 +935,12 @@ impl VsCodeSettings {
         let platform = "linux";
         #[cfg(target_os = "macos")]
         let platform = "osx";
+        #[cfg(target_os = "ios")]
+        let platform = "osx";
         #[cfg(target_os = "freebsd")]
         let platform = "freebsd";
+        #[cfg(target_os = "android")]
+        let platform = "linux";
         let env = self
             .read_value(&format!("terminal.integrated.env.{platform}"))
             .and_then(|v| v.as_object())
