@@ -18885,7 +18885,7 @@ dependencies = [
 [[package]]
 name = "trash"
 version = "5.2.5"
-source = "git+https://github.com/zed-industries/trash-rs?rev=3bf27effd4eb8699f2e484d3326b852fe3e53af7#3bf27effd4eb8699f2e484d3326b852fe3e53af7"
+source = "git+https://github.com/m-rcs/trash-rs?rev=e065db8c26b413fdb841d4da9d5230088c9769fe#e065db8c26b413fdb841d4da9d5230088c9769fe"
 dependencies = [
  "chrono",
  "libc",
@@ -22944,10 +22944,37 @@ version = "0.1.0"
 dependencies = [
  "android-activity",
  "android_logger",
+ "assets",
+ "buffer_diff",
+ "clock",
+ "collections",
+ "component",
+ "emojis",
+ "feature_flags",
+ "file_icons",
+ "fuzzy",
  "gpui",
  "gpui_mobile",
+ "icons",
+ "language",
  "log",
+ "menu",
+ "multi_buffer",
  "objc2",
+ "rope",
+ "snippet",
+ "sum_tree",
+ "text",
+ "theme",
+ "theme_settings",
+ "tree-sitter-rust",
+ "ui",
+ "ui_input",
+ "util",
+ "vim_mode_setting",
+ "zed_actions",
+ "zlog",
+ "ztracing",
 ]
 
 [[package]]
